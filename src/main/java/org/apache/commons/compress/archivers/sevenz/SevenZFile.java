@@ -237,7 +237,7 @@ public class SevenZFile implements Closeable {
          * @return {@code this} instance.
          */
         public Builder setPassword(final char[] password) {
-            this.password = password != null ? AES256SHA256Decoder.utf16Decode(password.clone()) : null;
+            this.password = password != null ? ChaCha20Decoder.utf16Decode(password.clone()) : null;
             return this;
         }
 
@@ -248,7 +248,7 @@ public class SevenZFile implements Closeable {
          * @return {@code this} instance.
          */
         public Builder setPassword(final String password) {
-            this.password = password != null ? AES256SHA256Decoder.utf16Decode(password.toCharArray()) : null;
+            this.password = password != null ? ChaCha20Decoder.utf16Decode(password.toCharArray()) : null;
             return this;
         }
 
@@ -470,7 +470,7 @@ public class SevenZFile implements Closeable {
     @Deprecated
     public SevenZFile(final File file, final char[] password, final SevenZFileOptions options) throws IOException {
         this(newByteChannel(file), // NOSONAR
-                file.getAbsolutePath(), AES256SHA256Decoder.utf16Decode(password), true, options);
+                file.getAbsolutePath(), ChaCha20Decoder.utf16Decode(password), true, options);
     }
 
     /**
@@ -682,7 +682,7 @@ public class SevenZFile implements Closeable {
      */
     @Deprecated
     public SevenZFile(final SeekableByteChannel channel, final String fileName, final char[] password, final SevenZFileOptions options) throws IOException {
-        this(channel, fileName, AES256SHA256Decoder.utf16Decode(password), false, options);
+        this(channel, fileName, ChaCha20Decoder.utf16Decode(password), false, options);
     }
 
     /**

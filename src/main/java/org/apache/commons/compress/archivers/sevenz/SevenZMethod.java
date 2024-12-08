@@ -59,6 +59,11 @@ public enum SevenZMethod {
     AES256SHA256(new byte[] { (byte) 0x06, (byte) 0xf1, (byte) 0x07, (byte) 0x01 }),
 
     /**
+     * ChaCha20 encryption with a key length of 256 bit using SHA256 for hashes - only supported when reading.
+     */
+    CHACHA20POLY1305SHA256(new byte[] { (byte) 0x06, (byte) 0xf1, (byte) 0x07, (byte) 0x01 }),
+
+    /**
      * BCJ x86 platform version 1.
      *
      * @since 1.8

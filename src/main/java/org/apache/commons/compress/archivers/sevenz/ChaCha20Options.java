@@ -16,28 +16,34 @@
  */
 package org.apache.commons.compress.archivers.sevenz;
 
+import javax.crypto.Cipher;
+import javax.crypto.SecretKey;
+import javax.crypto.SecretKeyFactory;
+import javax.crypto.spec.IvParameterSpec;
+import javax.crypto.spec.PBEKeySpec;
+import javax.crypto.spec.SecretKeySpec;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
-
-import javax.crypto.Cipher;
-import javax.crypto.SecretKey;
-import javax.crypto.spec.IvParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
+import java.security.spec.KeySpec;
+import java.util.Base64;
 
 /**
- * Options for {@link SevenZMethod#AES256SHA256} encoder
+ * Options for {@link SevenZMethod#CHACHA20POLY1305SHA256} encoder
  *
  * @since 1.23
- * @see AES256SHA256Decoder
+ * @see ChaCha20Decoder
  */
-public class AES256Options implements CipherOptions {
+public class ChaCha20Options implements CipherOptions {
 
     private static final byte[] EMPTY_BYTE_ARRAY = {};
 
-    static final String ALGORITHM = "AES";
+    static final String ALGORITHM = "ChaCha20";
 
-    static final String TRANSFORMATION = "AES/CBC/NoPadding";
+    static final String TRANSFORMATION = "ChaCha20-Poly1305";
+
+    static final int NONE_SIZE = 16;
+    static final int PBKDF2_ITERATIONS = 210_000;
 
     static SecretKeySpec newSecretKeySpec(final byte[] bytes) {
         return new SecretKeySpec(bytes, ALGORITHM);
@@ -63,8 +69,8 @@ public class AES256Options implements CipherOptions {
     /**
      * @param password password used for encryption
      */
-    AES256Options(final char[] password) {
-        this(password, EMPTY_BYTE_ARRAY, randomBytes(16), 19);
+    ChaCha20Options(final char[] password) {
+        this(password, EMPTY_BYTE_ARRAY, randomBytes(NONE_SIZE), PBKDF2_ITERATIONS);
     }
 
     /**
@@ -74,13 +80,13 @@ public class AES256Options implements CipherOptions {
      * @param numCyclesPower another password security enforcer parameter that controls the cycles of password hashing. More the this number is high, more
      *                       security you'll have but also high CPU usage
      */
-    AES256Options(final char[] password, final byte[] salt, final byte[] iv, final int numCyclesPower) {
+    ChaCha20Options(final char[] password, final byte[] salt, final byte[] iv, final int numCyclesPower) {
         this.salt = salt;
         this.iv = iv;
         this.numCyclesPower = numCyclesPower;
 
         // NOTE: for security purposes, password is wrapped in a Cipher as soon as possible to not stay in memory
-        final byte[] aesKeyBytes = AES256SHA256Decoder.sha256Password(password, numCyclesPower, salt);
+        final byte[] aesKeyBytes = kdf(password, numCyclesPower, salt);
         final SecretKey aesKey = newSecretKeySpec(aesKeyBytes);
 
         try {
@@ -106,5 +112,33 @@ public class AES256Options implements CipherOptions {
 
     byte[] getSalt() {
         return salt;
+    }
+
+    public static byte[] kdf(char[] password, int numCyclesPower, byte[] salt) {
+        try {
+            KeySpec spec = new PBEKeySpec(password, salt, numCyclesPower, 256);
+
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+
+            return factory.generateSecret(spec).getEncoded();
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static byte[] kdf(byte[] password, int numCyclesPower, byte[] salt) {
+
+        if(numCyclesPower < PBKDF2_ITERATIONS) {
+            numCyclesPower = PBKDF2_ITERATIONS;
+        }
+        try {
+            KeySpec spec = new PBEKeySpec(Base64.getEncoder().withoutPadding().encodeToString(password).toCharArray(), salt, numCyclesPower, 256);
+
+            SecretKeyFactory factory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA512");
+
+            return factory.generateSecret(spec).getEncoded();
+        }catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 }

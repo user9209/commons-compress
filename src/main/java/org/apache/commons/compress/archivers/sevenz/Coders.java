@@ -209,6 +209,7 @@ final class Coders {
             put(SevenZMethod.DEFLATE64, new Deflate64Decoder());
             put(SevenZMethod.BZIP2, new BZIP2Decoder());
             put(SevenZMethod.AES256SHA256, new AES256SHA256Decoder());
+            put(SevenZMethod.CHACHA20POLY1305SHA256, new ChaCha20Decoder());
             put(SevenZMethod.BCJ_X86_FILTER, new BCJDecoder(new X86Options()));
             put(SevenZMethod.BCJ_PPC_FILTER, new BCJDecoder(new PowerPCOptions()));
             put(SevenZMethod.BCJ_IA64_FILTER, new BCJDecoder(new IA64Options()));

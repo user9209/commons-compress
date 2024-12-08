@@ -124,7 +124,7 @@ public class SevenZOutputFile implements Closeable {
     private CountingOutputStream[] additionalCountingStreams;
     private Iterable<? extends SevenZMethodConfiguration> contentMethods = Collections.singletonList(new SevenZMethodConfiguration(SevenZMethod.LZMA2));
     private final Map<SevenZArchiveEntry, long[]> additionalSizes = new HashMap<>();
-    private AES256Options aes256Options;
+    private CipherOptions cipherOptions;
 
     /**
      * Opens file to write a 7z archive to.
@@ -180,7 +180,7 @@ public class SevenZOutputFile implements Closeable {
         this.channel = channel;
         channel.position(SevenZFile.SIGNATURE_HEADER_SIZE);
         if (password != null) {
-            this.aes256Options = new AES256Options(password);
+            this.cipherOptions = new ChaCha20Options(password);
         }
     }
 
@@ -333,10 +333,10 @@ public class SevenZOutputFile implements Closeable {
         final Iterable<? extends SevenZMethodConfiguration> ms = entry.getContentMethods();
         Iterable<? extends SevenZMethodConfiguration> iter = ms == null ? contentMethods : ms;
 
-        if (aes256Options != null) {
+        if (cipherOptions != null) {
             // prepend encryption
             iter = Stream
-                    .concat(Stream.of(new SevenZMethodConfiguration(SevenZMethod.AES256SHA256, aes256Options)), StreamSupport.stream(iter.spliterator(), false))
+                    .concat(Stream.of(new SevenZMethodConfiguration(SevenZMethod.CHACHA20POLY1305SHA256, cipherOptions)), StreamSupport.stream(iter.spliterator(), false))
                     .collect(Collectors.toList());
         }
         return iter;
